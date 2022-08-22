@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from project.src.django_sso import deauthenticate_user
+from django_sso import deauthenticate_user
 
 
 class EventAcceptor:
