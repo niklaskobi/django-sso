@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django_sso',
-    version='1.1.2',
+    version='1.1.3',
     author="DAVIDhaker",
     author_email='me@davidhaker.ru',
     packages=find_packages('src'),
@@ -14,7 +14,7 @@ setup(
     },
     description='Django Single Sign-On implementation',
     long_description_content_type='text/markdown',
-    long_description=open('README.md', 'r').read(),
+    long_description=open('README.md', 'r', encoding='utf-8').read(),
     include_package_data=True,
     url='https://github.com/davidhaker/django-sso',
     url_download='https://pypi.org/project/django-sso/',
