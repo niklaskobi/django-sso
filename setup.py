@@ -25,7 +25,7 @@ setup(
     ],
     python_requires='>=3',
     classifiers=[
-        'Development Status :: Beta',
+        'Development Status :: 4 - Beta',
         'Framework :: Django :: 2',
         'Framework :: Django :: 2.0',
         'Framework :: Django :: 2.1',
