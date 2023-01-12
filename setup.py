@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django_sso',
-    version='1.1.3',
+    version='1.1.4',
     author="DAVIDhaker",
     author_email='me@davidhaker.ru',
     packages=find_packages('src'),
@@ -25,7 +25,7 @@ setup(
     ],
     python_requires='>=3',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: Beta',
         'Framework :: Django :: 2',
         'Framework :: Django :: 2.0',
         'Framework :: Django :: 2.1',
@@ -36,6 +36,7 @@ setup(
         'Framework :: Django :: 3.2',
         'Framework :: Django :: 4',
         'Framework :: Django :: 4.0',
+        'Framework :: Django :: 4.1',
         'Natural Language :: English',
         'Natural Language :: Russian',
         'Programming Language :: Python :: 3',

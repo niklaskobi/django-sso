@@ -1,27 +1,27 @@
-# Django SSO (Single Sign-On) [Alpha version]
+# Django SSO (Single Sign-On) [Beta]
 
-Realization of SSO for Django. 
+Realization of Single Sign-On for Django.
 
-This library contains two modules.
+Supported Django versions:
 
-- <u>Server</u> side - `django_sso.sso_gateway` module
-- <u>Service</u> side module - `django_sso`.`sso_service`
+- `3.*`
+- `4.*`
+
+*Recommended to force specify package version while installing package, this is for security and compatibility reasons.*
 
 
 
-### Concept
+## How it works?
 
-Conception of module requires Django user subsystem and Django session subsystem - supports custom classes, but he must be based on classical Django classes (AbstractUser / AbstractBaseUser, etc..). This means that you have two ways. One: Do nothing, just install library to server/client and use it. Two: Create own user models based on abstract user classes (models).
-
-One side - server with all accounts. Two side - many services, who can communicate with SSO server and accept from it base user information.
+You should install this library to Django-project, that you planning will the authorization gateway (will keep all user accounts). Then add this library to services wich you wanna to authenticate via SSO gateway and thats all!
 
 
 
 ## Installation
 
-#### Server side
+### Server side
 
-1) Add to `INSTALLED_APPS` `django_sso`.`sso_gateway`
+1) Add to `INSTALLED_APPS` variable the module named `django_sso`.`gateway`
 
 ```python
 # project/settings.py
@@ -33,7 +33,7 @@ INSTALLED_APPS = [
 
 
 
-2) Migrate server models
+2) Migrate the gateway models
 
 ```python
 ./manage.py migrate sso_gateway
@@ -61,17 +61,21 @@ urlpatterns = [
 - `Enabled` - Are Subordinated service active. (Inactive services can’t communicate with server side and server side can’t communicate with it)
 - `Token` - Automatically generated token you should past to `settings.py ` to your service to `SSO_TOKEN` variable.
 
-
-
 Then server side is ready to use!
 
 
 
-#### Client side
+##### Optional settings
 
-When library app attached to client side app. Admin login form will overridden with same view as `login/` in client side.
+You also can provide the timeout of communication with subordinated services via variable in **settings.py**  named as `SSO_SUBORDINATE_COMMUNICATION_TIMEOUT`. This is timeout in seconds. Default value is 0.1s (100ms) per one service.
 
-1) Add `django_sso`.`service` to `INSTALLED_APPS` 
+
+
+### Client side
+
+When library attached to client side project. Admin login form will overridden with same view as `login/` in client side.
+
+1) Add `django_sso`.`sso_service` to `INSTALLED_APPS` 
 
 ```python
 # project/settings.py
@@ -129,7 +133,7 @@ Internal library urls (endpoints for services):
 - `sso/get/` - get SSO token information. (Is authorized for this token? Get user identity from token. etc..)
 - `sso/make_used/` - after successful authentication on client side need to mark authorization request as used.
 - `sso/deauthenticate/` - services sends deauthentication requests to SSO-server. SSO server broadcasts all services to deauthenticate user
-- `welcome/` - sample view for testing. For logged and unlogged users.
+- `__welcome/` - sample view for testing. For logged and unlogged users.
 
 
 
@@ -147,7 +151,15 @@ Library urls for internal usage (endpoints for SSO-server side)
 
 
 
-# Overriding event acceptor in subordinated service
+## Overriding
+
+### User and session storage
+
+This library based on Django user subsystem and Django session subsystem. Also supports custom classes, but he must be based on classical Django classes (AbstractUser / AbstractBaseUser, etc..). This means that you have two ways. One: Do nothing, just install library to gateway/services and just use it. Two: Just pick own classes of user/session with based Django`s mechanisms.
+
+
+
+### Overriding event acceptor in subordinated service
 
 For event processing you must declare own class and inherit it from base class located in `django_sso.sso_service.backends.EventAcceptor`. Inheritance are necessary. Arguments must  absolutely matches for overridden methods. 
 
@@ -177,6 +189,29 @@ SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
 ```
 
 
+
+## Debug & develop letter
+
+All exceptions in SSO mechanism will be logged in console.
+
+
+
+Often occurs error, when developer running gateway and services on same host that is unworkable situation. When it's happens - one service drops others cookies. For developing/runing on one machine multiple services you should separate by hosts. Write in your **hosts file** lines like next:
+
+```hosts
+127.0.0.1	sso_gateway
+127.0.0.1	my_sso_service_1
+127.0.0.1	my_sso_service_2
+```
+If after success authentication on the SSO-gateway system can't send event to subordinated service
+
+
+
+If after redirect back to service after authorization in gateway occurs any error, user will redirected url `/?sso_broken_token=true` on subordinated service. 
+
+
+
+If user redirected from subordinated service to gateway and successfully authorized on it but the gateway catch error while casting event - user will redirect to gateway page with url `/__welcome/fallback=true`.
 
 # SSO with non-Django project
 
@@ -369,14 +404,14 @@ For all requests to `sso/event/` subordinated service must be return next repons
 
 
 
-# To do and coming fixes
+# To do and coming fixes | roadmap
 
-- Access control to subordinated services. Possibility to set available services for single user.
-- Event queue for pushing events instead of immediately pushing. For stability and efficiency.
-- Integration with popular frameworks and making plug-ins for popular languages. (I can accept your code as part of project - link to repository, for example.)
-- Sample vanilla PHP project
-
-
+- [ ] Automatic test on all Django versions while push to master branch
+- [ ] Access control to subordinated services. Possibility to set available services for single user.
+- [ ] Event queue for pushing events instead of immediately pushing. For stability and efficiency.
+- [ ] Integration with popular frameworks and making plug-ins for popular languages. (I can accept your code as part of project - link to repository, for example.)
+- [ ] Integrate with the Sentry
+- [ ] Make auto testing
 
 # Support
 

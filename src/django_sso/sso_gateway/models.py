@@ -1,5 +1,3 @@
-import inspect
-
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -27,19 +25,31 @@ class Service(models.Model):
 		return self.base_url
 
 	def _send_event(self, event_type, data):
-		result = requests.post(
-			f'{self.base_url}/sso/event/',
-			json={
-				'type': event_type,
-				'token': self.token,
-				**data
-			},
-			headers={
-				"Content-Type": "application/json"
-			}
-		)
-		fail = False
 		text = None
+		fail = False
+
+		if hasattr(settings, 'SSO_SUBORDINATE_COMMUNICATION_TIMEOUT'):
+			timeout = settings.SSO_SUBORDINATE_COMMUNICATION_TIMEOUT
+
+			assert type(settings.SSO_SUBORDINATE_COMMUNICATION_TIMEOUT) in (int, float)
+		else:
+			timeout = 0.1  # 100ms
+
+		try:
+			result = requests.post(
+				f'{self.base_url}/sso/event/',
+				json={
+					'type': event_type,
+					'token': self.token,
+					**data
+				},
+				headers={
+					"Content-Type": "application/json"
+				},
+				timeout=timeout
+			)
+		except Exception as e:
+			raise Exception(f"{_('Failed to communicate with subordinated service')} {self.base_url}: {e}")
 
 		try:
 			assert result.status_code == 200, f"{result.text}"
@@ -56,7 +66,7 @@ class Service(models.Model):
 		except Exception as e:
 			if settings.DEBUG:
 				raise Exception(
-					f'{_("Incorrect response from subbordinated service")}: '
+					f'{_("Incorrect response from subordinated service")}: '
 					f'STATUS={result.status_code}; TEXT={e}'
 				)
 			else:
@@ -105,7 +115,7 @@ def auth_token_generator():
 
 
 class AuthenticationRequest(models.Model):
-	service = models.ForeignKey('Service', on_delete=models.CASCADE, verbose_name=_('Service'))
+	service: Service = models.ForeignKey('Service', on_delete=models.CASCADE, verbose_name=_('Service'))
 	created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
 	token = models.CharField(max_length=128, verbose_name=_('Token'), default=auth_token_generator, unique=True)
 	user_identy = models.CharField(max_length=128, verbose_name=_('User identy'), help_text=_('E-Mail, login, etc.'))
@@ -120,7 +130,7 @@ class AuthenticationRequest(models.Model):
 	def activate(self, user: User):
 		"""
 		1) Activate authentication request
-		2) Send base information about user to subbordinate service
+		2) Send base information about user to subordinate service
 		"""
 		user_model = get_user_model()
 

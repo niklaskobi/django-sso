@@ -44,3 +44,5 @@ class ServiceConfig(AppConfig):
                 raise ImproperlyConfigured(_(
                     'Can\'t import sso event acceptor class from SSO_EVENT_ACCEPTOR_CLASS variable'
                 ))
+
+        from . import signals

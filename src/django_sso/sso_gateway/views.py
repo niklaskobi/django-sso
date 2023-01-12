@@ -1,3 +1,4 @@
+import logging
 from builtins import super
 from typing import Optional
 
@@ -42,7 +43,9 @@ class LoginView(django.contrib.auth.views.LoginView):
 		try:
 			auth_request.activate(self.request.user)
 		except SSOException as e:
-			return reverse_lazy('welcome')
+			logging.critical(f'Failed to cast login event to subordinated on service {auth_request.service}: {e}')
+
+			return reverse_lazy('welcome') + '?fallback=true'
 
 		return f'{auth_request.service.base_url}/sso/accept/'
 

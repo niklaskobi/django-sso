@@ -12,7 +12,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 import django.contrib.auth
 
-from django_sso import deauthenticate_user
 from django_sso.exceptions import SSOException
 from django_sso.sso_gateway import set_sso_authorization_request_used
 from django_sso.sso_service import get_sso_authorization_request, request_sso_authorization_request, \
@@ -89,13 +88,12 @@ def authorize_from_sso_view(request: WSGIRequest):
                 'error': e
             })
         else:
-            return redirect('/')
+            return redirect('/?sso_broken_token=true')
 
 
 def logout(request):
     if not request.user.is_anonymous:
         try:
-            request_deauthentication(request.user)
             django.contrib.auth.logout(request)
         except Exception as e:
             if settings.DEBUG:
