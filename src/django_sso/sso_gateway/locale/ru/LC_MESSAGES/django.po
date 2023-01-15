@@ -119,27 +119,27 @@ msgid "Sign out"
 msgstr "Выход"
 
 #: views.py:77 views.py:112 views.py:150 views.py:188
-msgid "\"token\" is'nt set"
+msgid "\"token\" isn't set"
 msgstr "Поле \"token\" не заполненно"
 
 #: views.py:80
-msgid "\"next_url\" is'nt set"
+msgid "\"next_url\" isn't set"
 msgstr "Поле \"next_url\" не заполненно"
 
 #: views.py:85 views.py:117 views.py:155
-msgid "Application token is'nt exist"
+msgid "Application token doesn't exist"
 msgstr "Токен приложения не существует"
 
 #: views.py:120 views.py:158
-msgid "Authentication request token is'nt set"
+msgid "Authentication request token isn't set"
 msgstr "Токен запроса авторизации не задан"
 
 #: views.py:130 views.py:168
-msgid "Authentication request token is'nt exists"
+msgid "Authentication request token doesn't exist"
 msgstr "Токен запроса авторизации не существует"
 
 #: views.py:191
-msgid "\"user_identy\" is'nt set"
+msgid "\"user_identy\" isn't set"
 msgstr "Поле \"token\" не заполненно"
 
 msgid "Failed to communicate with subordinated service"

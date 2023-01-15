@@ -1,27 +1,23 @@
 # Django SSO (Single Sign-On) [Beta]
 
-Realization of Single Sign-On for Django.
+Implementation of Single Sign-On for Django.
 
 Supported Django versions:
 
 - `3.*`
 - `4.*`
 
-*Recommended to force specify package version while installing package, this is for security and compatibility reasons.*
+*It's recommended to force specify package versions while installing packages. This is for security and compatibility reasons.*
 
+## How does it work?
 
-
-## How it works?
-
-You should install this library to Django-project, that you planning will the authorization gateway (will keep all user accounts). Then add this library to services wich you wanna to authenticate via SSO gateway and thats all!
-
-
+You should install this library to your Django project, that you plan to use as the authorization gateway (this instance will keep all user accounts). Then add this library to services which you wanna authenticate via the SSO gateway, add a little bit of configuration and that's all!
 
 ## Installation
 
 ### Server side
 
-1) Add to `INSTALLED_APPS` variable the module named `django_sso`.`gateway`
+1. Add the module named `django_sso.gateway` to the `INSTALLED_APPS` variable  
 
 ```python
 # project/settings.py
@@ -31,17 +27,13 @@ INSTALLED_APPS = [
 ]
 ```
 
-
-
-2) Migrate the gateway models
+2. Migrate the gateway models
 
 ```python
 ./manage.py migrate sso_gateway
 ```
 
-
-
-3) Add urls to project:
+3. Add sso-urls to the project:
 
 ```python
 # project/urls.py
@@ -52,30 +44,24 @@ urlpatterns = [
 ]
 ```
 
+4. In the admin panel you will see a new section named `SINGLE SIGN-ON`. And in `Subordinated services` you should create a new entry with:
 
-
-4) In the admin panel you can see now new section, named `SINGLE SIGN-ON`. And in `Subordinated services` you should be create new. With next fields:
-
-- `Name` - Human name of service
-- `Base url` - URL for redirects and access to service endpoints from server side. (Like https://your-service.example).
-- `Enabled` - Are Subordinated service active. (Inactive services can’t communicate with server side and server side can’t communicate with it)
-- `Token` - Automatically generated token you should past to `settings.py ` to your service to `SSO_TOKEN` variable.
+- `Name` - Human name of the service
+- `Base url` - URL for redirects and access to service endpoints from the server. (Like https://your-service.example).
+- `Enabled` - Are subordinated services active. (Inactive services can’t communicate with the server and the server can’t communicate with it)
+- `Token` - Automatically generated token you should paste into your services `settings.py`. Copy this for the next step of configuring the client.
 
 Then server side is ready to use!
 
-
-
 ##### Optional settings
 
-You also can provide the timeout of communication with subordinated services via variable in **settings.py**  named as `SSO_SUBORDINATE_COMMUNICATION_TIMEOUT`. This is timeout in seconds. Default value is 0.1s (100ms) per one service.
-
-
+You also can provide the timeout for the communication with subordinated services via a variable in `settings.py`  named `SSO_SUBORDINATE_COMMUNICATION_TIMEOUT`. This timeout is defined in seconds with a default value of 0.1s (100ms) per registered service.
 
 ### Client side
 
-When library attached to client side project. Admin login form will overridden with same view as `login/` in client side.
+When the library is attached to the client side project, the admin login form will be overridden with same view as `login/` at client side.
 
-1) Add `django_sso`.`sso_service` to `INSTALLED_APPS` 
+1) Add `django_sso.sso_service` to `INSTALLED_APPS` 
 
 ```python
 # project/settings.py
@@ -84,8 +70,6 @@ INSTALLED_APPS = [
     'django_sso.sso_service',
 ]
 ```
-
-
 
 2) Add urls to service application
 
@@ -98,8 +82,6 @@ urlpatterns = [
 ]
 ```
 
-
-
 3) Setup settings variables
 
 ```python
@@ -111,13 +93,12 @@ LOGIN_URL = '/login/'
 # Specify SSO server base url
 SSO_ROOT = 'https://sso.project.test'
 
-# Specify application token obtained in SSO server in the admin panel
+# Specify application token obtained in the SSO server admin panel
 SSO_TOKEN = 'reej8Vt5kbCPJM9mZQqYsvfxC...'
 
 # Overriding event acceptor class (OPTIONAL). For more details read "Overriding event acceptor in subordinated service" partition
 SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
 ```
-
 
 
 ## Structure
@@ -139,13 +120,13 @@ Internal library urls (endpoints for services):
 
 #### Client side urls
 
-- `login/` - login form. Intermediate form. Obtains authentication request, and redirects to SSO server `/login`. 
-- `logout/` - Does deauthenticate user and cast deauthentication event to SSO-server (to `sso/deauthenticate/` on server side).
-- `sso/test/` - Page for test SSO mechanism immediately after install `django_sso`. When you open it in browser: If user are logged in - shows his name or redirect to SSO server and comes back after successful authentication.
+- `login/` - login form. Intermediate form. Obtains authentication request and redirects to SSO server `/login`. 
+- `logout/` - Deauthenticates the user and emits deauthentication event to SSO-server (to `sso/deauthenticate/` at server side).
+- `sso/test/` - Page for testing the SSO mechanism immediately after installation of `django_sso`. When you open it in browser: If user are logged in - shows the username or redirects to SSO server and comes back after successful authentication.
 
 Library urls for internal usage (endpoints for SSO-server side)
 
-- `sso/event/` - Event acceptor from SSO server. Look to “**SSO with non-Django project / Accepting events**” section
+- `sso/event/` - Event acceptor from SSO server. Look at “**SSO with non-Django project / Accepting events**” section
 
 - `sso/accept/` - User after successful authentication comes back. SSO-server redirect it to this URL for make Django authorization. Then after session is up - browser will redirect to the next URL.
 
@@ -182,36 +163,29 @@ class MyHardEventAcceptor(EventAcceptor):
 
 
 
-Then next put path to this class to `settings.py`:
+Then next put the path to this class into `settings.py`:
 
 ```python
 SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
 ```
 
 
-
-## Debug & develop letter
+## Debug & development notice
 
 All exceptions in SSO mechanism will be logged in console.
 
-
-
-Often occurs error, when developer running gateway and services on same host that is unworkable situation. When it's happens - one service drops others cookies. For developing/runing on one machine multiple services you should separate by hosts. Write in your **hosts file** lines like next:
+Note: The gateway and the services have to run on distinct domains to not mess with each others cookies. For development on a single machine use the `hosts` file to create multiple domains like this:
 
 ```hosts
 127.0.0.1	sso_gateway
 127.0.0.1	my_sso_service_1
 127.0.0.1	my_sso_service_2
 ```
-If after success authentication on the SSO-gateway system can't send event to subordinated service
+Otherwise, after successful authentication at the SSO gateway the system can't send the event to it's subordinated service. For upmost three different services you can also make use of localhost, 127.0.0.1 and 0.0.0.0 as distinct domain names. :) 
 
+If an error occurs after the authorization at the gateway, the user will be redirected to `/?sso_broken_token=true` at the subordinated service. 
 
-
-If after redirect back to service after authorization in gateway occurs any error, user will redirected url `/?sso_broken_token=true` on subordinated service. 
-
-
-
-If user redirected from subordinated service to gateway and successfully authorized on it but the gateway catch error while casting event - user will redirect to gateway page with url `/__welcome/fallback=true`.
+In case the authorization was successful but an error is caught while emitting the event the user will be redirected to the gateway page with url `/__welcome/fallback=true`.
 
 # SSO with non-Django project
 
@@ -223,13 +197,13 @@ In next examples i’ll use sso_server.test meaning SSO server.
 
 ### Login page
 
-When unlogged user visit login page. In backend need to requests SSO token from SSO server.
+When unlogged user visits login page, the backends need to request the SSO token from the SSO server.
 
 Fields:
 
-`token` - obtained from first step from SSO server
+`token` - obtained from first step at SSO server
 
-`next_url` - relative URL, for redirect after successful authentication. (SSO will generate `Basic URL + Next URL` string and will forward user to it)
+`next_url` - relative URL for redirect after successful authentication. (SSO will generate `Basic URL + Next URL` string and will forward user to it)
 
 ```bash
 curl --request POST \
@@ -241,8 +215,7 @@ curl --request POST \
 ```
 
 
-
-If all success, server will send to you authentication request token in JSON.
+If all succeeds, server will send you an authentication request token in JSON format.
 
 ```json
 {
@@ -254,7 +227,7 @@ Then
 
 1) Write token to session. (In PHP - $_SESSION.)
 
-2) Redirect user to http://sso_server.test/login/?sso=NmyWRItAye0gDxX7CZhOFs2HKZtT3xyfdrq14TU. You should put obtained token to URL to “sso” parameter. User will be redirected to SSO login page. 
+2) Redirect user to http://sso_server.test/login/?sso=NmyWRItAye0gDxX7CZhOFs2HKZtT3xyfdrq14TU. You should put the obtained token to URL into “sso” parameter. User will be redirected to SSO login page. 
 
 On SSO login page next:
 
@@ -287,7 +260,7 @@ In any other case:
 
 ```json
 {
-	"error": "Authentication request token is'nt exists"
+	"error": "Authentication request token doesn't exist"
 }
 ```
 
@@ -357,7 +330,7 @@ Events sends in JSON format via POST request.
 
 ##### Create/update account
 
-When user created or updated or disabled or marked or unmarked as superuser also every time when user sign’s-in.
+When user is created, updated, disabled, (un)marked as superuser and with every login.
 
 ```json
 {
@@ -366,9 +339,9 @@ When user created or updated or disabled or marked or unmarked as superuser also
     "username": "somebody", // Value from username field
     
     // Next fields may be not included in event. Because user model on SSO don't have it
-    "is_active": True, // Are active user now in SSO server
-    "is_staff": True, // Are user is staff member
-    "is_superuser": Trie, // Are user is superuser
+    "is_active": True,  // Active user at SSO server
+    "is_staff": True,  // User is staff member
+    "is_superuser": True,  // User is superuser
 }
 ```
 
@@ -376,7 +349,7 @@ When user created or updated or disabled or marked or unmarked as superuser also
 
 ##### Deauthenticate
 
-When user somewhere requested deauthentication. This event will casts to all active subordinated services.
+When user requested for deauthentication at any service. This event will be emitted to all active subordinated services.
 
 ```json
 {
@@ -396,7 +369,7 @@ For all requests to `sso/event/` subordinated service must be return next repons
     "ok": True
 }
 
-// Else if failured
+// Else if failed
 {
     "error": "Error description here"
 }
@@ -410,12 +383,12 @@ For all requests to `sso/event/` subordinated service must be return next repons
 - [ ] Access control to subordinated services. Possibility to set available services for single user.
 - [ ] Event queue for pushing events instead of immediately pushing. For stability and efficiency.
 - [ ] Integration with popular frameworks and making plug-ins for popular languages. (I can accept your code as part of project - link to repository, for example.)
-- [ ] Integrate with the Sentry
+- [ ] Integrate with Sentry
 - [ ] Make auto testing
 
 # Support
 
-This library in alpha version. Don’t panic. This are draft version. Next time will uploaded fully documented clean version. Plans - make it more better and finish. Also i wanna to make later visual illustrations of logic.
+This library in beta version. Don’t panic. There are more plans to make it better and finished. Also later I wanna make some visual illustrations of the SSO flow.
 
 You can support me via
 
@@ -425,6 +398,6 @@ BUSD/BNB or any token (**BEP20**):  0x74e47ae3A26b8C5cD84d181595cC62723A1B114E
 
 
 
-Any thinks: me@davidhaker.ru
+Any thoughts: me@davidhaker.ru
 
-With love to open source!
+With love for open source!

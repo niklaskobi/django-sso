@@ -43,7 +43,7 @@ class LoginView(django.contrib.auth.views.LoginView):
 		try:
 			auth_request.activate(self.request.user)
 		except SSOException as e:
-			logging.critical(f'Failed to cast login event to subordinated on service {auth_request.service}: {e}')
+			logging.critical(f'Failed to emit login event to subordinated service {auth_request.service}: {e}')
 
 			return reverse_lazy('welcome') + '?fallback=true'
 
@@ -60,7 +60,7 @@ class LogoutView(View):
 	def dispatch(self, request, *args, **kwargs):
 		return super().dispatch(request, *args, **kwargs)
 
-	def post(self, request):
+	def get(self, request):
 		logout(request)
 
 		return redirect(reverse_lazy('login'))
@@ -77,15 +77,15 @@ class ObtainView(View):
 
 	def post(self, request):
 		if not request.POST.get('token', '').strip():
-			return JsonResponse({"error": _('"token" is\'nt set')})
+			return JsonResponse({"error": _('"token" isn\'t set')})
 
 		if not request.POST.get('next_url', '').strip():
-			return JsonResponse({"error": _('"next_url" is\'nt set')})
+			return JsonResponse({"error": _('"next_url" isn\'t set')})
 
 		service = Service.objects.filter(enabled=True, token=request.POST['token']).first()
 
 		if not service:
-			return JsonResponse({"error": _("Application token is'nt exist")})
+			return JsonResponse({"error": _("Application token doesn't exist")})
 
 		sso_request = AuthenticationRequest(
 			service=service,
@@ -112,15 +112,15 @@ class GetAuthenticationRequestView(View):
 
 	def post(self, request):
 		if not request.POST.get('token', '').strip():
-			return JsonResponse({"error": _('"token" is\'nt set')})
+			return JsonResponse({"error": _('"token" isn\'t set')})
 
 		service = Service.objects.filter(enabled=True, token=request.POST['token']).first()
 
 		if not service:
-			return JsonResponse({"error": _("Application token is'nt exist")})
+			return JsonResponse({"error": _("Application token doesn't exist")})
 
 		if not request.POST.get('authentication_token', '').strip():
-			return JsonResponse({"error": _("Authentication request token is'nt set")})
+			return JsonResponse({"error": _("Authentication request token doesn't set")})
 
 		authorization_request = AuthenticationRequest.objects.filter(
 			token=request.POST.get('authentication_token'),
@@ -130,7 +130,7 @@ class GetAuthenticationRequestView(View):
 		).first()
 
 		if not authorization_request:
-			return JsonResponse({"error": _("Authentication request token is'nt exists")})
+			return JsonResponse({"error": _("Authentication request token doesn't exist")})
 		else:
 			return JsonResponse({
 				"authenticated": True,
@@ -150,15 +150,15 @@ class MakeUsedView(View):
 
 	def post(self, request):
 		if not request.POST.get('token', '').strip():
-			return JsonResponse({"error": _('"token" is\'nt set')})
+			return JsonResponse({"error": _('"token" isn\'t set')})
 
 		service = Service.objects.filter(enabled=True, token=request.POST['token']).first()
 
 		if not service:
-			return JsonResponse({"error": _("Application token is'nt exist")})
+			return JsonResponse({"error": _("Application token doesn't exist")})
 
 		if not request.POST.get('authentication_token', '').strip():
-			return JsonResponse({"error": _("Authentication request token is'nt set")})
+			return JsonResponse({"error": _("Authentication request token doesn't set")})
 
 		authorization_request = AuthenticationRequest.objects.filter(
 			token=request.POST.get('authentication_token'),
@@ -168,7 +168,7 @@ class MakeUsedView(View):
 		).first()
 
 		if not authorization_request:
-			return JsonResponse({"error": _("Authentication request token is'nt exists")}, status=404)
+			return JsonResponse({"error": _("Authentication request token doesn't exist")}, status=404)
 		else:
 			authorization_request.authenticated = True
 			authorization_request.save()
@@ -188,10 +188,10 @@ class DeauthenticateView(View):
 
 	def post(self, request):
 		if not request.POST.get('token', '').strip():
-			return JsonResponse({"error": _('"token" is\'nt set')})
+			return JsonResponse({"error": _('"token" isn\'t set')})
 
 		if not request.POST.get('user_identy', '').strip():
-			return JsonResponse({"error": _('"user_identy" is\'nt set')})
+			return JsonResponse({"error": _('"user_identy" isn\'t set')})
 
 		service = Service.objects.filter(enabled=True, token=request.POST['token']).first()
 
