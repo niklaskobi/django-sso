@@ -1,3 +1,4 @@
+import json
 import logging
 from builtins import super
 from typing import Optional
@@ -9,6 +10,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
 
@@ -208,3 +210,14 @@ class DeauthenticateView(View):
 				instance.deauthenticate(user)
 
 		return JsonResponse({'ok': True})
+
+
+class DebugUpdateEvent(TemplateView):
+	template_name = 'django_sso/debug_update_event.html'
+
+	def get_context_data(self, **kwargs):
+		svc: Service = Service.objects.filter(id=1).get()
+		kwargs.update({
+			'event': json.dumps(svc._build_update_user_event(self.request.user), indent=3)
+		})
+		return kwargs

@@ -101,9 +101,32 @@ SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
 ```
 
 
+
+## Default behavior summary (In case, when the SSO gateway and subordinated service implemented with the Django SSO)
+
+### Behavior
+
+When user created/updated on the gateway app - system will emit to all subbordinated services profile info (creates or updates profile data with full list of basic and additional fields.
+
+When direct related model (provided in ADDITIONAL_FIELDS setting) created or changed - system will emit event to all services with information about changes. By default - additional fields updation - on developer hands (you must override EventAcceptor class and provide own actions for events. You can read about it below). When deleted - system will send nulls same as sends data to all new/old related users.
+
+When the user deauthenticated the Django SSO package will emit deauthentication event and instantly purge the sessions on subbordinated services.
+
+When user deleted on the gateway side - the gateway app will emit event and in subordinated services user instantly will disabled if provided **is_active** property. By Django authentication subystem rules - if user have **is_active=False** - system will not authenticate it.
+
+
+
+### Recomendations and importants
+
+In your project gateway and all subordinated services must have same major version *(MAJOR.MINOR.CHORE_OR_FIX)*. Also very recomendet to install package with fixed version. Autoupdates may brokes your because breaking changes.
+
+You **must** prevent overriding all data, wich coming from the SSO gateway app. You can change additional fields of the your user model in subbordinated service, but fields, provided from SSO exchange must be overriden only by the SSO gateway events.
+
+
+
 ## Structure
 
-#### Server side urls
+#### Server side URLs
 
 - `login/` - central login form (you can override template `django_sso/login.html`) 
 - `logout/` - central logout view. Clear all sessions on all resources for user
@@ -114,7 +137,8 @@ Internal library urls (endpoints for services):
 - `sso/get/` - get SSO token information. (Is authorized for this token? Get user identity from token. etc..)
 - `sso/make_used/` - after successful authentication on client side need to mark authorization request as used.
 - `sso/deauthenticate/` - services sends deauthentication requests to SSO-server. SSO server broadcasts all services to deauthenticate user
-- `__welcome/` - sample view for testing. For logged and unlogged users.
+- `sso/debug/update_event/` - View for debugging the `SSO[ADDITIONAL_FIELDS]` setting. This URL enabled only in the Django `DEBUG` mode only. Here you can see emitted variables to all subordinated services per every login or affected model updation/deletion/creation.
+- `__welcome/` - Sample view for testing. For logged and unlogged users.
 
 
 
@@ -146,28 +170,151 @@ For event processing you must declare own class and inherit it from base class l
 
 ```python
 # project/my_overrides.py
-from django_sso.sso_service.backends import EventAcceptor
+from django_sso.sso_service.backends import EventAcceptor, acceptor
 
 # In case, when you need to do something after deauthentication
 class MyEventAcceptor(EventAcceptor):
+    @acceptor # Every event accpetor method must be decorated with it
     def deauthenticate(self, username):
+        # Here you can do own actions before deauthentication
         super().deauthenticate(usernmae)
-        # Here you can do own actions after deauthentication
+        # And here you can do own actions after deauthentication
 
         
 # In other case, when you need to override default behavior of class
 class MyHardEventAcceptor(EventAcceptor):
+    @acceptor
     def deauthenticate(self, username):
         # Here you do own actions
 ```
 
-
+Method names are the same that event types. See [here](#accepting-events--additional-fields).
 
 Then next put the path to this class into `settings.py`:
 
 ```python
 SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
 ```
+
+
+
+![](assets/sso_gateway_events_en.png)
+
+Methods of the **EventAcceptor** class are the same that event names provided in scheme.
+
+
+
+## Send additional data to subordinated services
+
+By default the SSO gateway sends to subordinated services next fields (if provided in user model):
+Also, this names are reserved and overriding of it is restricted in the ADDITIONAL_FIELDS setting.
+
+- `is_staff` - Are user is staff member (can access admin panel).
+- `is_active` - Obviously, activity status.
+- `is_superuser` - Are user have full privileges.
+- `user_identy` - User identity. Obtained from **YourUserModel.USERNAME_FIELD**. Unique and not null ever. E-Mail / Login etc.
+
+But possible cases when you need to send more data, than only this flags. For this case the library have next way: 
+
+<a name="imagine">Imagine, that we have next:</a>
+
+```python
+# Anything additional data
+class Category(models.Model):
+    name = models.CharField(max_length=12)
+
+    def to_sso_representation(self):
+        """
+        This method will call if this instance in the ADDITIONAL_FIELDS provided just as a variable
+        """
+        return f'to_sso_representation() for Category #{self.name}'
+
+    @property
+    def my_var(self):
+        return f'my_var for user #{self.id}'
+
+    def my_method(self):
+        """
+        Your method that returns data (should be too fast)
+        - it is recommended to mark this method for security reasons, as it is used in the SSO mechanism
+        - recommended to be named like "sso_field__my_id_is" for code style and obviousness
+        """
+        return f'my_method() for user #{self.id}'
+
+
+# One2One reverse related model wich extends user model
+class ReversedAdvancedUserData(models.Model):
+    something_else = CharField(max_length=12, default=None, null=True)
+
+
+# Custom user model or the default auth.User model (no difference)
+class UserModel(AbstractUser):
+    my_custom_field = models.CharField(max_length=16, default=None, null=True)
+    category = models.ForeignKey(Category, default=None, null=True, on_delete=models.CASCADE)
+    advanced_data2 = models.OneToOneField(ReversedAdvancedUserData, null=True, on_delete=models.SET_NULL, related_name='data2')
+
+
+# The One2One related model which extends user model (possible that you create this instance via signals)
+class AdvancedUserData(models.Model):
+    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='data')
+    my_data_field = models.IntegerField(default=1)
+```
+
+
+
+1. On the gateway side in `settings.py` add variable with implementation like next: 
+
+```python
+SSO = {
+    # Additional fields wich send with update user event (Any fields related to user model)
+    # This setting are optional
+    'ADDITIONAL_FIELDS': (
+        # It's a UserModel.my_custom_field
+        'my_custom_field',
+
+        # It's a Category.name from UserModel.category
+        'category.name',
+
+        # Will put Category.to_sso_representation (or __str__) by UserModel.category object
+        'category',
+
+        # If prop isset - will put AdvancedUserData.my_data_field
+        'data.my_data_field',
+
+        # Will get value from the AdvancedUserData.to_sso_representation method
+        # or AdvancedUserData.__str__
+        'data',
+
+        # Will get value from ReversedAdvancedUserData.to_sso_representation method
+        # or ReversedAdvancedUserData.__str__
+        'advanced_data2',
+
+        # This field is UserModel.my_custom_field with an alias named "an_alias"
+        'my_custom_field:an_alias',
+
+        # Also you can put properties and methods to sending data
+        'category.my_method',  # Category.my_method will called
+        'category.my_var',  # Get the Category.my_var prop value
+    )
+}
+```
+
+​	
+
+- Value, that you put to fields, must be `bool` or `str` or `int` or `float` or `None`. If expected any other type: the `django-sso` library will try to cast to `str` or **will log error to console**. 
+- When you will set the `SSO_ADDITIONAL_FIELDS` variable - system will subscribe to all **pre_save** signals of provided models and will get all described values and will emit event with it and list of users, related to changes. Event emits when any model has changed/deleted. If model deleted - Django SSO will emit fields filled with null to all related users to deleted object.  
+- All finaly translated (to aliases or not) field names must be distinct and not overrides the basic variables (is_staff, enabled, is_superuser) else you will catch exception on project start.
+- Any field may be aliased
+- If methods execution time greater than 200ms - you got a detailed warning in console.
+- Property order flow (all properties are related to user model at begin):![](assets/additional_fields_flow.png)
+- <u>Allowed fields only from direct relations. Nested relations restricted.</u>
+- If `ForeignKey` or  `OneToOneField` relation is `None` - `None` will placed to result.
+- If during method execution occurs exception - to field will placed `None` and to console wil printed detailed warning. 
+- Also exists page for debugging fields (see the gateway urls for more details).
+	![image-20230120230127179](assets/sso_debug_event.png)
+
+
+
 
 
 ## Debug & development notice
@@ -328,20 +475,27 @@ For example. When user is marked as superuser, SSO-server will cast event to all
 
 Events sends in JSON format via POST request.
 
+
+
 ##### Create/update account
 
-When user is created, updated, disabled, (un)marked as superuser and with every login.
+When user is created, updated, disabled, (un)marked as superuser and with every login. By `django-sso` behavior: Event fields `is_active`, `is_staff`, `is_superuser` will cast to `bool`.
 
 ```json
 {
     "type": "update_account", // Event name
     "token": "kaIrVNHF4msyLBJeaD4hSO", // Service token to authenticate SSO server
-    "username": "somebody", // Value from username field
     
     // Next fields may be not included in event. Because user model on SSO don't have it
-    "is_active": True,  // Active user at SSO server
-    "is_staff": True,  // User is staff member
-    "is_superuser": True,  // User is superuser
+    "fields": [
+        "user_identy": "somebody", // Value from username field
+        "is_active": True,  // Active user at SSO server
+        "is_staff": True,  // User is staff member
+        "is_superuser": True,  // User is superuser
+        
+        "custom_field": "Somethig from field", // Custom field 
+        "data.field": 1, // Custom field from OneToOne related object or ForeginKey field if isset,
+    ]
 }
 ```
 
@@ -349,19 +503,112 @@ When user is created, updated, disabled, (un)marked as superuser and with every 
 
 ##### Deauthenticate
 
-When user requested for deauthentication at any service. This event will be emitted to all active subordinated services.
+When user requested for deauthentication at any service or user deleted on the SSO gateway. This event will be emitted to all active subordinated services.
 
 ```json
 {
     "type": "deauthenticate", // Event name
     "token": "kaIrVNHF4msyLBJeaD4hSO", // Service token to authenticate SSO server
-    "username": "somebody" // Value from username field
+    
+    "user_identy": "somebody" // Value from username field
 }
 ```
 
 
 
-For all requests to `sso/event/` subordinated service must be return next reponses
+##### Delete account
+
+When user has been deleted on the SSO gateway - system will emit event about it with next body:
+
+```json
+{
+    "type": "delete", // Event name
+    "token": "kaIrVNHF4msyLBJeaD4hSO", // Service token to authenticate SSO server
+    
+    "user_identy": "somebody" // value from username field
+}
+```
+
+
+
+##### Change user identy
+
+When user has been renamed on SSO gateway - system will emit event with old and new identy to rename user on all subordinated services.
+
+```json
+{
+    "type": "change_user_identy", // Event name
+    "token": "kaIrVNHF4msyLBJeaD4hSO", // Service token to authenticate SSO server
+    
+    "old": "old_user@email_or.login", // Old identy
+    "new": "new_user@email_or.login" // New identy
+}
+```
+
+
+
+##### <a name="accepting-events--additional-fields">Additional fields update</a>
+
+If you set an _additional fields_ in the settings (`SSO['ADDITIONAL_FIELDS']`) and the fields are taken from models other than your `UserModel`: The SSO Gateway will generate the next event for each model separately and cast it to all subordinated services:
+
+(following examples will be written in context of [imagintaion](#imagine))
+
+```python
+// In case when created or deleted
+
+// For Category model will next:
+{
+	"type": "update_fields",
+    "token": "kaIrVNHF4msyLBJeaD4hSO",
+    
+    "fields": [
+        "category.name": "New name",
+        "category.id": "New category id"
+    ],
+    
+    "user_identities": [
+        "admin",
+        "test",
+        "DAVIDhaker"
+    ]
+}
+
+// For AdvancedUserData next:
+{
+    "type": "update_fields",
+    "token": "kaIrVNHF4msyLBJeaD4hSO",
+    
+    "fields": [
+        "data.my_data_field": "New value 2"
+    ],
+    
+    "user_identities": [
+        "admin",
+        "test",
+        "DAVIDhaker"
+    ]
+}
+
+// If related object deleted, in "fields" all values will be null.
+{
+    "type": "fields_update",
+    "token": "kaIrVNHF4msyLBJeaD4hSO",
+    
+    "fields": [
+        "data.my_data_field": null
+    ],
+    
+    "user_identities": [
+        "admin",
+        "test",
+        "DAVIDhaker"
+    ]
+}
+```
+
+
+
+For all requests to `sso/event/` subordinated service must be return next reponces
 
 ```json
 // In successful case
@@ -380,21 +627,27 @@ For all requests to `sso/event/` subordinated service must be return next repons
 # To do and coming fixes | roadmap
 
 - [ ] Automatic test on all Django versions while push to master branch
-- [ ] Access control to subordinated services. Possibility to set available services for single user.
-- [ ] Event queue for pushing events instead of immediately pushing. For stability and efficiency.
+- [x] Access control to subordinated services. Possibility to set available services per user.
+	*Partially realized via the additional fields.*
+- [ ] Event queue for pushing events instead of immediately pushing. For stability and efficiency and **for preventing of lost info, when subordinated service are off-line**.
 - [ ] Integration with popular frameworks and making plug-ins for popular languages. (I can accept your code as part of project - link to repository, for example.)
 - [ ] Integrate with Sentry
-- [ ] Make auto testing
+- [ ] Multilanguage docs
+- [ ] Library provided mechanism for management user permissions.
+
+
 
 # Support
 
-This library in beta version. Don’t panic. There are more plans to make it better and finished. Also later I wanna make some visual illustrations of the SSO flow.
+There are more plans to make it better... Also i wanna to translate it to popular languages.
 
-You can support me via
+If you wanna to support project. You can do it via
 
 Ethereum: 0x2BD7aA911861029feB08430EEB9a36DC9a8A14d2 (also accept any token :-) )
 
 BUSD/BNB or any token (**BEP20**):  0x74e47ae3A26b8C5cD84d181595cC62723A1B114E
+
+or any other way. You can mail ask about it.
 
 
 

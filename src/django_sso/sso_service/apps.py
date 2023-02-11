@@ -33,7 +33,7 @@ class ServiceConfig(AppConfig):
                         f'In SSO_EVENT_ACCEPTOR_CLASS declared module has no class named {class_name}'
                     ))
 
-                if not isinstance(class_ref, EventAcceptor):
+                if not issubclass(class_ref, EventAcceptor):
                     raise ImproperlyConfigured(
                         f'{settings.SSO_EVENT_ACCEPTOR_CLASS} {_("is not inherits")} '
                         f'django_sso.sso_service.backend.EventAcceptor'

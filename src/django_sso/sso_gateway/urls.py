@@ -1,5 +1,6 @@
 from django.urls import path
 from django.views.generic import TemplateView
+from django.conf import settings
 
 from . import views
 
@@ -14,3 +15,8 @@ urlpatterns = [
 	path('sso/deauthenticate/', views.DeauthenticateView.as_view(), name="deauthenticate_view"),
 	path('__welcome/', TemplateView.as_view(template_name='django_sso/welcome.html'), name="welcome"),
 ]
+
+if settings.DEBUG:
+	urlpatterns.append(
+		path('sso/debug/update_event/', views.DebugUpdateEvent.as_view(), name="debug_update_event"),
+	)

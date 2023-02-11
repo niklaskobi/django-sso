@@ -115,8 +115,8 @@ def event_acceptor_view(request):
         return HttpResponse(status=400)
 
     if (
-        not data.get('token', '').strip()
-        or data.pop('token') != settings.SSO_TOKEN
+            not data.get('token', '').strip()
+            or data.pop('token') != settings.SSO_TOKEN
     ):
         return JsonResponse({
             'error': _('Token not provided or incorrect')
@@ -139,16 +139,19 @@ def event_acceptor_view(request):
 
         dispatcher_class = getattr(importlib.import_module(module_name), class_name)
 
-        if not hasattr(dispatcher_class, type_name):
-            return JsonResponse({'error': f"{_('Event type not supported')} ({type_name})"})
-        else:
+        if (
+            hasattr(dispatcher_class, type_name)
+            and hasattr(getattr(dispatcher_class, type_name), '__is_sso_event_acceptor')
+            and getattr(dispatcher_class, type_name).__is_sso_event_acceptor
+        ):
             try:
                 getattr(dispatcher_class(), type_name)(**data)
             except Exception as e:
                 return JsonResponse({'error': str(e)})
 
             return JsonResponse({'ok': True})
+        else:
+            return JsonResponse({'error': f"{_('Event type not supported')} ({type_name})"})
 
     except Exception as e:
         return JsonResponse({'error': str(e)})
-
