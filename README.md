@@ -177,7 +177,7 @@ class MyEventAcceptor(EventAcceptor):
     @acceptor # Every event accpetor method must be decorated with it
     def deauthenticate(self, username):
         # Here you can do own actions before deauthentication
-        super().deauthenticate(usernmae)
+        super().deauthenticate(username)
         # And here you can do own actions after deauthentication
 
         
