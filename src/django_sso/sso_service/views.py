@@ -40,7 +40,7 @@ def login_view(request):
     return render(
         request,
         context={
-            'redirect_url': f"{settings.SSO_ROOT}/login/?{params}"
+            'redirect_url': f"{settings.SSO['ROOT']}/login/?{params}"
         },
         template_name='django_sso/redirect_to_sso.html'
     )
@@ -116,7 +116,7 @@ def event_acceptor_view(request):
 
     if (
             not data.get('token', '').strip()
-            or data.pop('token') != settings.SSO_TOKEN
+            or data.pop('token') != settings.SSO['TOKEN']
     ):
         return JsonResponse({
             'error': _('Token not provided or incorrect')
@@ -131,9 +131,8 @@ def event_acceptor_view(request):
         if type_name.startswith('_'):
             return JsonResponse({'error': _('Incorrect event type name')})
 
-        module_name, class_name = getattr(
-            settings,
-            'SSO_EVENT_ACCEPTOR_CLASS',
+        module_name, class_name = settings.SSO.get(
+            'EVENT_ACCEPTOR_CLASS',
             'django_sso.sso_service.backend.EventAcceptor'
         ).rsplit('.', 1)
 

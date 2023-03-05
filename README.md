@@ -51,11 +51,23 @@ urlpatterns = [
 - `Enabled` - Are subordinated services active. (Inactive services can’t communicate with the server and the server can’t communicate with it)
 - `Token` - Automatically generated token you should paste into your services `settings.py`. Copy this for the next step of configuring the client.
 
+5. Settings (if needed)
+
+```python
+# SSO settings section in the gateway side are optional
+SSO = {
+    # Timeout for the communication with subordinated services. (OPTIONAL)
+    # This timeout is defined in seconds with a default value of 0.1s 
+    # (100ms) per registered service.
+    'SUBORDINATE_COMMUNICATION_TIMEOUT': 0.1,
+    
+    # Additional fields. (OPTIONAL). For more details look to part
+    # named as "Send additional data to subordinated services"
+    'ADDITIONAL_FIELDS': ('additiona_fields', 'from_user_model', 'and_related_models'),
+}
+```
+
 Then server side is ready to use!
-
-##### Optional settings
-
-You also can provide the timeout for the communication with subordinated services via a variable in `settings.py`  named `SSO_SUBORDINATE_COMMUNICATION_TIMEOUT`. This timeout is defined in seconds with a default value of 0.1s (100ms) per registered service.
 
 ### Client side
 
@@ -90,14 +102,17 @@ urlpatterns = [
 # Django variable. URL for unlogged users. We redirect it to our view.
 LOGIN_URL = '/login/'
 
-# Specify SSO server base url
-SSO_ROOT = 'https://sso.project.test'
-
-# Specify application token obtained in the SSO server admin panel
-SSO_TOKEN = 'reej8Vt5kbCPJM9mZQqYsvfxC...'
-
-# Overriding event acceptor class (OPTIONAL). For more details read "Overriding event acceptor in subordinated service" partition
-SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
+SSO = {
+    # Specify SSO server base url (REQUIRED)
+    'ROOT': 'https://sso.project.test',
+    
+	# Specify application token obtained in the SSO server admin panel (REQUIRED)
+	'TOKEN': 'reej8Vt5kbCPJM9mZQqYsvfxC...',
+ 	
+    # Overriding event acceptor class (OPTIONAL). For more details read
+    # "Overriding event acceptor in subordinated service" partition
+    'EVENT_ACCEPTOR_CLASS': 'project.my_overrides.MySSOEventAcceptor'
+}
 ```
 
 
@@ -193,7 +208,12 @@ Method names are the same that event types. See [here](#accepting-events--additi
 Then next put the path to this class into `settings.py`:
 
 ```python
-SSO_EVENT_ACCEPTOR_CLASS = 'project.my_overrides.MySSOEventAcceptor'
+SSO = {
+    # Your settings
+    ...
+
+	'EVENT_ACCEPTOR_CLASS': 'project.my_overrides.MySSOEventAcceptor'
+}
 ```
 
 
@@ -213,6 +233,8 @@ Also, this names are reserved and overriding of it is restricted in the ADDITION
 - `is_active` - Obviously, activity status.
 - `is_superuser` - Are user have full privileges.
 - `user_identy` - User identity. Obtained from **YourUserModel.USERNAME_FIELD**. Unique and not null ever. E-Mail / Login etc.
+
+Additional fields are not included in the default behavior for security reasons and for clarity of the project code and the code behavior.
 
 But possible cases when you need to send more data, than only this flags. For this case the library have next way: 
 

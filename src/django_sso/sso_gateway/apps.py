@@ -25,21 +25,23 @@ class DjangoSsoConfig(AppConfig):
         # region Bind signals for models provided in SSO['ADDITIONAL_FIELDS']
         affected_models = self.sso_settings.affected_models_fields.keys()
 
+        model = get_user_model()
+
+        @receiver(pre_save, sender=model)
+        def pre_save_proxy(*args, **kwargs):
+            self.on_pre_save_user_model(*args, **kwargs)
+
+        @receiver(post_save, sender=model)
+        def post_save_proxy(*args, **kwargs):
+            self.on_post_save_user_model(*args, **kwargs)
+
+        @receiver(post_delete, sender=model)
+        def post_delete_proxy(*args, **kwargs):
+            self.on_post_delete_user(*args, **kwargs)
+
         if len(affected_models) > 0:
             for model in affected_models:
-                if model == get_user_model():
-                    @receiver(pre_save, sender=model)
-                    def pre_save_proxy(*args, **kwargs):
-                        self.on_pre_save_user_model(*args, **kwargs)
-
-                    @receiver(post_save, sender=model)
-                    def post_save_proxy(*args, **kwargs):
-                        self.on_post_save_user_model(*args, **kwargs)
-
-                    @receiver(post_delete, sender=model)
-                    def post_delete_proxy(*args, **kwargs):
-                        self.on_post_delete_user(*args, **kwargs)
-                else:
+                if model != get_user_model():
                     @receiver(pre_save, sender=model)
                     def pre_save_proxy(*args, **kwargs):
                         self.on_pre_save_related_model(*args, **kwargs)

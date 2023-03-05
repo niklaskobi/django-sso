@@ -22,8 +22,8 @@ def set_sso_authorization_request_used(sso_token):
     For sso_service side. Makes SSO request as used for authentication procedure (not available for next authentications)
     """
     try:
-        result = requests.post(settings.SSO_ROOT.rstrip('/') + '/sso/make_used/', {
-            'token': settings.SSO_TOKEN,
+        result = requests.post(settings.SSO['ROOT'].rstrip('/') + '/sso/make_used/', {
+            'token': settings.SSO['TOKEN'],
             'authentication_token': sso_token
         })
 
@@ -50,12 +50,12 @@ class Settings:
         return cls.instance
 
     def __init__(self):
+        self.affected_models_fields = {}
+
         if not hasattr(settings, 'SSO'):
             return
 
         assert type(settings.SSO) == dict, _('SSO settings variable must be dict')
-
-        self.affected_models_fields = {}
         """
         Models, used in SSO['ADDITIONAL_FIELDS'] parameer mapped to the SSO['ADDITIONAL_FIELDS'] values.
         """

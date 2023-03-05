@@ -13,36 +13,42 @@ class ServiceConfig(AppConfig):
     name = 'django_sso.sso_service'
 
     def ready(self):
-        for variable in ('SSO_TOKEN', 'LOGIN_URL', 'SSO_ROOT'):
-            if not getattr(settings, variable, ''):
-                raise ImproperlyConfigured(f"{variable} {_('settings variable not set')}")
+        if not hasattr(settings, 'SSO') or not isinstance(settings.SSO, dict):
+            raise ImproperlyConfigured(f'Django SSO: SSO dictionary does not exist or not a dict')
 
-        sso_event_acceptor_class = getattr(settings, 'SSO_EVENT_ACCEPTOR_CLASS', ''.strip())
+        if not hasattr(settings, 'LOGIN_URL'):
+            raise ImproperlyConfigured('Django SSO: Requires LOGIN_URL setting')
+
+        for variable in ('TOKEN', 'ROOT'):
+            if variable not in settings.SSO:
+                raise ImproperlyConfigured(f"SSO[{variable}] {_('settings variable not set')}")
+
+        sso_event_acceptor_class = settings.SSO.get('EVENT_ACCEPTOR_CLASS', '').strip()
 
         if sso_event_acceptor_class:
             if type(sso_event_acceptor_class) != str:
-                raise ImproperlyConfigured(f"SSO_EVENT_ACCEPTOR_CLASS {_('must be string')}")
+                raise ImproperlyConfigured(f"SSO[EVENT_ACCEPTOR_CLASS] {_('must be string')}")
 
             try:
-                [module_name, class_name] = settings.SSO_EVENT_ACCEPTOR_CLASS.rsplit('.', 1)
+                [module_name, class_name] = sso_event_acceptor_class.rsplit('.', 1)
                 module = importlib.import_module(module_name)
                 class_ref = getattr(module, class_name, None)
 
                 if not class_ref:
                     raise ImproperlyConfigured(_(
-                        f'In SSO_EVENT_ACCEPTOR_CLASS declared module has no class named {class_name}'
+                        f'In SSO[EVENT_ACCEPTOR_CLASS] declared module has no class named {class_name}'
                     ))
 
                 if not issubclass(class_ref, EventAcceptor):
                     raise ImproperlyConfigured(
-                        f'{settings.SSO_EVENT_ACCEPTOR_CLASS} {_("is not inherits")} '
+                        f'{settings.SSO["EVENT_ACCEPTOR_CLASS"]} {_("is not inherits")} '
                         f'django_sso.sso_service.backend.EventAcceptor'
                     )
             except ImproperlyConfigured as e:
                 raise e
             except Exception as e:
                 raise ImproperlyConfigured(_(
-                    'Can\'t import sso event acceptor class from SSO_EVENT_ACCEPTOR_CLASS variable'
+                    'Can\'t import SSO event acceptor class from SSO[EVENT_ACCEPTOR_CLASS] variable'
                 ))
 
         from . import signals

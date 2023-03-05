@@ -23,12 +23,12 @@ msgstr ""
 #: apps.py:33
 #, python-brace-format
 msgid ""
-"In SSO_EVENT_ACCEPTOR_CLASS declared module has no class named {class_name}"
+"In SSO[EVENT_ACCEPTOR_CLASS] declared module has no class named {class_name}"
 msgstr ""
 
 #: apps.py:45
 msgid ""
-"Can't import sso event acceptor class from SSO_EVENT_ACCEPTOR_CLASS variable"
+"Can't import sso event acceptor class from SSO[EVENT_ACCEPTOR_CLASS] variable"
 msgstr ""
 
 #: templates/django_sso/deauthentication_error.html:5

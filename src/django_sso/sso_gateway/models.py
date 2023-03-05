@@ -78,7 +78,8 @@ class Service(models.Model):
 
             return
 
-    def _build_update_user_event(self, user):
+    @staticmethod
+    def build_update_user_event(user):
         """
         Build event for accounts update on subbordinated services
 
@@ -131,7 +132,8 @@ class Service(models.Model):
 
         return event
 
-    def _build_update_fields_event(self, user_identities: Union[set, QuerySet], instance: ModelBase):
+    @staticmethod
+    def build_update_fields_event(user_identities: Union[set, QuerySet], instance: ModelBase):
         """
         Build event for fields update on subbordinated services. Fields of related model.
 
@@ -236,7 +238,7 @@ class Service(models.Model):
 
         return self._send_event(
             event_type='update_account',
-            data=self._build_update_user_event(user)
+            data=self.build_update_user_event(user)
         )
 
     def update_fields(self, to_users: Union[QuerySet, set], instance: ModelBase = None) -> bool:
@@ -248,7 +250,7 @@ class Service(models.Model):
 
         return self._send_event(
             event_type='update_fields',
-            data=self._build_update_fields_event(to_users, instance)
+            data=self.build_update_fields_event(to_users, instance)
         )
 
     @staticmethod

@@ -23,7 +23,7 @@ def acceptor(f):
         try:
             f(self, *args, **kwargs)
         except Exception as e:
-            a = 123
+            logging.error(f'Django SSO Error {f.__qualname__}: {e}')
 
         duration_seconds = (datetime.now() - started_at).total_seconds()
 

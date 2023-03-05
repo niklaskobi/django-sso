@@ -13,8 +13,8 @@ def request_sso_authorization_request(request) -> str:
     Необходим для дальнейшей авторизации пользователя на шлюзе авторизации
     """
     try:
-        result = requests.post(settings.SSO_ROOT.rstrip('/') + '/sso/obtain/', {
-            "token": settings.SSO_TOKEN,
+        result = requests.post(settings.SSO['ROOT'].rstrip('/') + '/sso/obtain/', {
+            "token": settings.SSO['TOKEN'],
             "next_url": request.GET.get('next', '/'),
         })
 
@@ -36,8 +36,8 @@ def get_sso_authorization_request(sso_token: str) -> dict:
     Get SSO token information from server to check authorization
     """
     try:
-        result = requests.post(settings.SSO_ROOT.rstrip('/') + '/sso/get/', {
-            'token': settings.SSO_TOKEN,
+        result = requests.post(settings.SSO['ROOT'].rstrip('/') + '/sso/get/', {
+            'token': settings.SSO['TOKEN'],
             'authentication_token': sso_token
         })
 
@@ -61,13 +61,15 @@ def request_deauthentication(user):
     user_model = get_user_model()
 
     try:
-        result = requests.post(settings.SSO_ROOT.rstrip('/') + '/sso/deauthenticate/', {
-            'token': settings.SSO_TOKEN,
+        result = requests.post(settings.SSO['ROOT'].rstrip('/') + '/sso/deauthenticate/', {
+            'token': settings.SSO['TOKEN'],
             'user_identy': getattr(user, user_model.USERNAME_FIELD)
         })
 
         if result.status_code != 200:
-            raise SSOException(f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}')
+            raise SSOException(
+                f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}'
+            )
 
         result = result.json()
 
@@ -75,9 +77,3 @@ def request_deauthentication(user):
             raise SSOException(result['error'])
     except Exception as e:
         raise SSOException(e)
-
-
-def get_event_acceptor():
-    a = 123
-    # importlib.('django_sso.backend')
-    # return

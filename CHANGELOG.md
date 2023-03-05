@@ -15,3 +15,8 @@
 - Fixed identy changing problem: If user email has changed - in old version system was create new user, but not renamed.
 - Added `http://your.gateway/sso/debug/update_event/` page on gateway side for debugging additional fields event content.
 - Updated README.md
+
+### 3.0.0 at 6 Marth 2023
+- Breaking change: Settings storing in the dict instead of separated vars with SSO_ prefix.
+- Fixed: When the ADDITIONAL_FIELDS setting are not provided - user model changes wasn't sent to subordinated services, except cases, when user has been logged or has been unlogged from.
+- Fixed kidy mistakes from previous release

@@ -216,8 +216,8 @@ class DebugUpdateEvent(TemplateView):
 	template_name = 'django_sso/debug_update_event.html'
 
 	def get_context_data(self, **kwargs):
-		svc: Service = Service.objects.filter(id=1).get()
 		kwargs.update({
-			'event': json.dumps(svc._build_update_user_event(self.request.user), indent=3)
+			'event': json.dumps(Service.build_update_user_event(self.request.user), indent=3)
 		})
+
 		return kwargs
