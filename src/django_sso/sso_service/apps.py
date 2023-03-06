@@ -13,8 +13,13 @@ class ServiceConfig(AppConfig):
     name = 'django_sso.sso_service'
 
     def ready(self):
+        if not hasattr(settings, 'SSO'):
+            raise ImproperlyConfigured(f'Django SSO: Client side requires SSO variable in settings.py')
+
         if not hasattr(settings, 'SSO') or not isinstance(settings.SSO, dict):
-            raise ImproperlyConfigured(f'Django SSO: SSO dictionary does not exist or not a dict')
+            raise ImproperlyConfigured(
+                f'Django SSO: In settings.py SSO variable must be dict. (Now are "{type(settings.SSO).__name__}")'
+            )
 
         if not hasattr(settings, 'LOGIN_URL'):
             raise ImproperlyConfigured('Django SSO: Requires LOGIN_URL setting')

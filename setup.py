@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django_sso',
-    version='3.0.0',  # SemVer
+    version='3.0.1',  # SemVer
     author="DAVIDhaker",
     author_email='me@davidhaker.ru',
     packages=find_packages('src'),

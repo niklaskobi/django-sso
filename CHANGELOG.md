@@ -20,3 +20,6 @@
 - Breaking change: Settings storing in the dict instead of separated vars with SSO_ prefix.
 - Fixed: When the ADDITIONAL_FIELDS setting are not provided - user model changes wasn't sent to subordinated services, except cases, when user has been logged or has been unlogged from.
 - Fixed kidy mistakes from previous release
+
+### 3.0.1 at 6 Marth 2023
+- Make more obvious error message about mistakes in client side settings
