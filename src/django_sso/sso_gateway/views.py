@@ -4,6 +4,7 @@ from builtins import super
 from typing import Optional
 
 import django.contrib.auth.views
+from django.conf import settings
 from django.contrib.auth import logout, get_user_model
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -40,7 +41,10 @@ class LoginView(django.contrib.auth.views.LoginView):
 			).first()
 
 		if not auth_request or not auth_request.next_url:
-			return reverse_lazy('welcome')
+			if settings.LOGIN_REDIRECT_URL != '/accounts/profile/':
+				return reverse_lazy(settings.LOGIN_REDIRECT_URL)
+			else:
+				return reverse_lazy('welcome')
 
 		try:
 			auth_request.activate(self.request.user)
