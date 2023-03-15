@@ -40,7 +40,7 @@ def login_view(request):
     return render(
         request,
         context={
-            'redirect_url': f"{settings.SSO['ROOT']}/login/?{params}"
+            'redirect_url': f"{settings.SSO['ROOT'].rstrip('/')}/login/?{params}"
         },
         template_name='django_sso/redirect_to_sso.html'
     )
